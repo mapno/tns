@@ -22,7 +22,7 @@ services:
     ports:
       - 0.0.0.0:8000:80
     environment:
-      JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
+      JAEGER_ENDPOINT: 'http://agent:14268'
       JAEGER_TAGS: job=tns/db
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: 1
@@ -40,7 +40,7 @@ services:
     ports:
       - 0.0.0.0:8001:80
     environment:
-      JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
+      JAEGER_ENDPOINT: 'http://agent:14268'
       JAEGER_TAGS: job=tns/app
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: 1
@@ -58,7 +58,7 @@ services:
     ports:
       - 0.0.0.0:8002:80
     environment:
-      JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
+      JAEGER_ENDPOINT: 'http://agent:14268'
       JAEGER_TAGS: job=tns/loadgen
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: 1
@@ -82,24 +82,16 @@ services:
       namespace: monitoring
     logging: *default-logging
 
-  prometheus:
-    image: prom/prometheus:v2.28.1
-    user: root
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=1d
-      - --enable-feature=exemplar-storage
-      - --log.level=debug
-      - --web.enable-admin-api
+  cortex:
+    image: cortexproject/cortex:v1.8.1
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
-    links:
-      - app
-      - db
-      - loadgen
+      - /tmp/cortex:/tmp/cortex
+      - .:/etc/cortex-config
+    entrypoint:
+      - /bin/cortex
+      - -config.file=/etc/cortex-config/cortex.yaml
     ports:
-      - 0.0.0.0:9090:9090
+      - "9009:9009"
     labels:
       namespace: monitoring
     logging: *default-logging
@@ -159,3 +151,21 @@ services:
     labels:
       namespace: monitoring
     logging: *default-logging
+
+  agent:
+    image: grafana/agent:latest
+    volumes:
+      - /tmp/agent:/tmp/agent
+      - .:/etc/agent-config
+      - /var/log:/var/log
+    entrypoint:
+      - /bin/agent
+      - -config.file=/etc/agent-config/agent.yaml
+      - -prometheus.wal-directory=/tmp/agent/wal
+    ports:
+      - "12345:12345"
+    labels:
+      namespace: monitoring
+    logging: *default-logging
+    depends_on:
+      - tempo
