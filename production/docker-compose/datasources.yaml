@@ -2,7 +2,7 @@ apiVersion: 1
 datasources:
   - name: Prometheus
     type: prometheus
-    url: http://prometheus:9090/
+    url: http://cortex:9009/api/prom
     access: proxy
     editable: true
     isDefault: true
@@ -33,7 +33,7 @@ datasources:
   - name: Tempo
     type: tempo
     uid: tempo
-    url: http://tempo/
+    url: http://tempo:8004
     access: proxy
     editable: true
     isDefault: false

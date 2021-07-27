@@ -22,7 +22,7 @@ services:
     ports:
       - 0.0.0.0:8000:80
     environment:
-      JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
+      JAEGER_ENDPOINT: 'http://agent:14268'
       JAEGER_TAGS: job=tns/db
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: 1
@@ -40,7 +40,7 @@ services:
     ports:
       - 0.0.0.0:8001:80
     environment:
-      JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
+      JAEGER_ENDPOINT: 'http://agent:14268'
       JAEGER_TAGS: job=tns/app
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: 1
@@ -58,7 +58,7 @@ services:
     ports:
       - 0.0.0.0:8002:80
     environment:
-      JAEGER_ENDPOINT: 'http://tempo:14268/api/traces'
+      JAEGER_ENDPOINT: 'http://agent:14268'
       JAEGER_TAGS: job=tns/loadgen
       JAEGER_SAMPLER_TYPE: const
       JAEGER_SAMPLER_PARAM: 1
@@ -159,3 +159,21 @@ services:
     labels:
       namespace: monitoring
     logging: *default-logging
+
+  agent:
+    image: grafana/agent:latest
+    volumes:
+      - /tmp/agent:/tmp/agent
+      - .:/etc/agent-config
+      - /var/log:/var/log
+    entrypoint:
+      - /bin/agent
+      - -config.file=/etc/agent-config/agent.yaml
+      - -prometheus.wal-directory=/tmp/agent/wal
+    ports:
+      - "12345:12345"
+    labels:
+      namespace: monitoring
+    logging: *default-logging
+    depends_on:
+      - tempo

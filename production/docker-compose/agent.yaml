@@ -1,0 +1,92 @@
+server:
+  log_level: debug
+  http_listen_port: 12345
+
+prometheus:
+  global:
+    scrape_interval: 5s
+  configs:
+    - name: test
+      host_filter: false
+      scrape_configs:
+        - job_name: local_scrape
+          static_configs:
+            - targets: ['127.0.0.1:12345', '0.0.0.0:8889']
+        - job_name: 'monitoring/grafana'
+          static_configs:
+            - targets: ['grafana:3000']
+        - job_name: 'monitoring/loki'
+          static_configs:
+            - targets: ['loki:3100']
+        - job_name: 'monitoring/tempo'
+          static_configs:
+            - targets: ['tempo:80']
+        - job_name: 'tns/app'
+          static_configs:
+            - targets: ['app:80']
+        - job_name: 'tns/db'
+          static_configs:
+            - targets: ['db:80']
+        - job_name: 'tns/loadgen'
+          static_configs:
+            - targets: ['loadgen:80']
+        - job_name: 'monitoring/node_exporter'
+          static_configs:
+            - targets: ['node_exporter:9100']
+        - job_name: 'monitoring/cadvisor'
+          static_configs:
+            - targets: ['cadvisor:8080']
+      remote_write:
+        - url: http://cortex:9009/api/prom/push
+          send_exemplars: true
+
+loki:
+  configs:
+    - name: default
+      positions:
+        filename: /tmp/positions.yaml
+      clients:
+        - url: http://loki:3100/loki/api/v1/push
+      scrape_configs:
+        - job_name: system
+          static_configs:
+            - targets:
+                - localhost
+              labels:
+                job: varlogs
+                __path__: /var/log/*log
+
+tempo:
+  configs:
+    - name: default
+      receivers:
+        jaeger:
+          protocols:
+            grpc:
+            thrift_binary:
+            thrift_compact:
+            thrift_http:
+      attributes:
+        actions:
+          - action: upsert
+            key: env
+            value: prod
+      remote_write:
+        - endpoint: tempo:55680
+          insecure: true
+      batch:
+        timeout: 5s
+        send_batch_size: 100
+      automatic_logging:
+        backend: loki
+        loki_name: default
+        spans: true
+        processes: true
+        roots: true
+        labels:
+          - svc
+          - status
+      spanmetrics:
+        handler_endpoint: 0.0.0.0:8889
+      service_graphs:
+        enabled: true
