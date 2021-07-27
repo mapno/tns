@@ -161,7 +161,7 @@ services:
     logging: *default-logging
 
   agent:
-    image: grafana/agent:latest
+    image: mapno/agent:service-graphs
     volumes:
       - /tmp/agent:/tmp/agent
       - .:/etc/agent-config
