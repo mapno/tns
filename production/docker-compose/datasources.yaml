@@ -43,3 +43,4 @@ datasources:
         datasourceUid: 'loki'
         tags: ['job', 'instance', 'pod', 'namespace']
     version: 1
+    apiVersion: 1
