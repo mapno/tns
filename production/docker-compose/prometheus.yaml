@@ -31,7 +31,7 @@ scrape_configs:
     - targets: ['loki:3100']
   - job_name: 'monitoring/tempo'
     static_configs:
-    - targets: ['tempo:80']
+    - targets: ['tempo:3200']
   - job_name: 'tns/app'
     static_configs:
     - targets: ['app:80']
@@ -43,10 +43,13 @@ scrape_configs:
     - targets: ['loadgen:80']
   - job_name: 'monitoring/docker'
     static_configs:
-    - targets: ['docker.for.mac.host.internal:9323']
+    - targets: ['docker.for.mac.host.internal:9090'] # Change to your docker host
   - job_name: 'monitoring/node_exporter'
     static_configs:
     - targets: ['node_exporter:9100']
   - job_name: 'monitoring/cadvisor'
     static_configs:
     - targets: ['cadvisor:8080']
+  - job_name: 'spanmetrics'
+    static_configs:
+      - targets: ['agent:8889']
